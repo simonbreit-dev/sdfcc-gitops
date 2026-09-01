@@ -1,0 +1,33 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/simonbreit-dev/software-development-cloud-computing26/sdfcc-backend
+  tag: sha-REPLACE_ME
+  digest: ""
+
+secret:
+  enabled: false
+  existingSecretName: sdfcc-database
+  rolloutToken: "1"
+
+config:
+  SPRING_PROFILES_ACTIVE: demo
+  SERVER_PORT: "8080"
+  DEPLOYMENT_ENVIRONMENT: production
+  APP_SECURITY_CORS_ALLOWED_ORIGINS: https://app.example.com
+  OTEL_TRACES_EXPORTER: none
+  OTEL_METRICS_EXPORTER: none
+  OTEL_LOGS_EXPORTER: none
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: api.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: sdfcc-backend-tls
+      hosts:
+        - api.example.com

@@ -1,0 +1,14 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: sdfcc-backend
+  namespace: flux-system
+spec:
+  interval: 5m
+  url: oci://ghcr.io/simonbreit-dev/software-development-cloud-computing26/charts/sdfcc-backend
+  ref:
+    # Replace after the application CI publishes an ARM64-capable release.
+    tag: 0.1.0-sha-REPLACE_ME
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy

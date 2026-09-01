@@ -1,0 +1,30 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sdfcc-backend
+  namespace: flux-system
+spec:
+  interval: 10m
+  timeout: 5m
+  releaseName: sdfcc-backend
+  targetNamespace: sdfcc-dev
+  storageNamespace: sdfcc-dev
+  install:
+    createNamespace: false
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      # Automatic rollback is unsafe while Hibernate mutates the schema.
+      retries: 0
+  driftDetection:
+    mode: enabled
+  chartRef:
+    kind: OCIRepository
+    name: sdfcc-backend
+    namespace: flux-system
+  valuesFrom:
+    - kind: ConfigMap
+      name: sdfcc-backend-values
+      valuesKey: values.yaml

@@ -1,0 +1,38 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/simonbreit-dev/software-development-cloud-computing26/sdfcc-backend
+  # Replace with the matching immutable image tag produced by application CI.
+  tag: sha-REPLACE_ME
+  digest: ""
+  pullPolicy: IfNotPresent
+
+secret:
+  enabled: false
+  existingSecretName: sdfcc-database
+  rolloutToken: "1"
+
+config:
+  SPRING_PROFILES_ACTIVE: demo
+  SERVER_PORT: "8080"
+  DEPLOYMENT_ENVIRONMENT: local-k3s
+  APP_SECURITY_CORS_ALLOWED_ORIGINS: http://localhost:5173
+  OTEL_TRACES_EXPORTER: none
+  OTEL_METRICS_EXPORTER: none
+  OTEL_LOGS_EXPORTER: none
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: http
+
+ingress:
+  enabled: false
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi

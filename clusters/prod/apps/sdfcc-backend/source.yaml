@@ -1,0 +1,15 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: sdfcc-backend
+  namespace: flux-system
+spec:
+  # Production remains deliberately suspended until promotion is designed.
+  suspend: true
+  interval: 5m
+  url: oci://ghcr.io/simonbreit-dev/software-development-cloud-computing26/charts/sdfcc-backend
+  ref:
+    tag: 0.1.0-sha-REPLACE_ME
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy

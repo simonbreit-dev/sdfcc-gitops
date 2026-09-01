@@ -1,0 +1,6 @@
+# Never commit plaintext Kubernetes secrets or local age private keys.
+*.secret.yaml
+!*.secret.sops.yaml
+.age-key.txt
+age-key.txt
+*.decrypted.yaml

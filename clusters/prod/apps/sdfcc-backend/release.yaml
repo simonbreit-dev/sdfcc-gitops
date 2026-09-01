@@ -1,0 +1,28 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sdfcc-backend
+  namespace: flux-system
+spec:
+  # This repository currently prepares local dev only.
+  suspend: true
+  interval: 10m
+  timeout: 5m
+  releaseName: sdfcc-backend
+  targetNamespace: sdfcc-prod
+  storageNamespace: sdfcc-prod
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 0
+  chartRef:
+    kind: OCIRepository
+    name: sdfcc-backend
+    namespace: flux-system
+  valuesFrom:
+    - kind: ConfigMap
+      name: sdfcc-backend-values
+      valuesKey: values.yaml
