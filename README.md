@@ -1,4 +1,4 @@
-# SDFCC Flux GitOps Repository
+# Software Development for Cloud Computing GitOps Repository
 
 This repository defines the desired Kubernetes state for SDFCC. Application
 source and release builds remain in `software-development-cloud-computing26`;
