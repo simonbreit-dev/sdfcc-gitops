@@ -46,18 +46,23 @@ image: ghcr.io/simonbreit-dev/software-development-cloud-computing26/sdfcc-backe
 chart: ghcr.io/simonbreit-dev/software-development-cloud-computing26/charts/sdfcc-backend:0.1.0-sha-<git-sha>
 ```
 
-Before unsuspending the dev application, replace both `REPLACE_ME` markers with
-the matching tags from one green CI run. Confirm that the published image
-manifest contains `linux/arm64`; the local K3s node is ARM64. Do not use `latest`
-or `main` in GitOps.
+Dev currently selects chart `0.1.0-sha-4c16932` and image `sha-4c16932`. The
+image is additionally pinned to multi-platform index digest
+`sha256:0c482d7ff25e29e8689e7b020a1ef5b6ffd263a7165bf4da5aebc55869628730`,
+which contains both `linux/amd64` and `linux/arm64`. The chart has matching
+`appVersion: sha-4c16932`. Do not use `latest` or `main` in GitOps.
+
+This release is selected for the local dev deployment with the current Trivy
+findings accepted temporarily. Replace the chart tag, image tag, and image
+digest together when promoting a newer release.
 
 The OCI source selects the packaged Helm layer explicitly for Flux
 `HelmRelease.spec.chartRef` consumption.
 
 ## Database Secret with SOPS and age
 
-Plaintext secrets and local age private keys are ignored by `.gitignore`.
-Install the currently missing tools when preparing the first deployment:
+Plaintext secrets and local age private keys are ignored by `.gitignore`. Install
+the tools if they are missing when preparing or rotating deployment secrets:
 
 ```sh
 brew install sops age
@@ -65,30 +70,51 @@ age-keygen -o .age-key.txt
 age-keygen -y .age-key.txt
 ```
 
-Create `.sops.yaml` using the printed public recipient:
+The committed `.sops.yaml` contains the public recipient for this dev
+environment. To rotate the age identity, replace its recipient with the output
+of `age-keygen -y .age-key.txt`:
 
 ```yaml
 creation_rules:
-  - path_regex: clusters/dev/infrastructure/secrets/.*\.secret\.sops\.yaml$
+  - path_regex: clusters/dev/infrastructure/secrets/.*\.secret(\.sops)?\.yaml$
     encrypted_regex: ^(data|stringData)$
     age: age1REPLACE_WITH_YOUR_PUBLIC_RECIPIENT
 ```
 
-Copy the example, generate a unique password, and keep the plaintext file
-uncommitted:
+Copy the example, generate a unique database password and one persistent RSA
+key pair, and keep the plaintext files uncommitted:
 
 ```sh
 cp clusters/dev/infrastructure/secrets/sdfcc-database.secret.yaml.example \
   clusters/dev/infrastructure/secrets/sdfcc-database.secret.yaml
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 \
+  -out .jwt-private.pem
+openssl pkey -in .jwt-private.pem -pubout -out .jwt-public.pem
 sops --encrypt \
   clusters/dev/infrastructure/secrets/sdfcc-database.secret.yaml \
   > clusters/dev/infrastructure/secrets/sdfcc-database.secret.sops.yaml
 ```
 
+Replace every `CHANGE_ME` in the plaintext Secret before encryption. Insert the
+complete private and public PEM contents as YAML block scalars under
+`JWT_PRIVATE_KEY_PEM` and `JWT_PUBLIC_KEY_PEM`. The private key must be PKCS#8,
+the public key must be X.509, and the pair must remain stable across pod
+restarts. Delete `.jwt-private.pem`, `.jwt-public.pem`, and the plaintext Secret
+after encryption and protected backup of the private key.
+
 Add `sdfcc-database.secret.sops.yaml` to the resources in
 `clusters/dev/infrastructure/secrets/kustomization.yaml`. Verify that the
 encrypted file contains SOPS metadata and no readable password before staging
 it.
+
+For local decryption checks, point SOPS at the ignored repository key without
+printing the Secret:
+
+```sh
+SOPS_AGE_KEY_FILE=.age-key.txt sops --decrypt \
+  clusters/dev/infrastructure/secrets/sdfcc-database.secret.sops.yaml \
+  >/dev/null
+```
 
 Install the age private key in the cluster as an out-of-band bootstrap secret:
 
@@ -102,9 +128,11 @@ not commit it. Losing it makes the encrypted repository Secret unrecoverable.
 
 ## Publish and bootstrap
 
-This local directory currently has no commit or remote. Create and publish the
-GitHub repository before changing the cluster. The running Flux installation is
-still connected to `simonbreit-dev/fsdfcc-gitops` at `./clusters/my-cluster`.
+This repository is published privately at
+`github.com/simonbreit-dev/sdfcc-gitops`. Flux bootstrap resources have not yet
+been committed here. Verify the live cluster source before changing it; the
+last recorded installation still used `simonbreit-dev/fsdfcc-gitops` at
+`./clusters/my-cluster`.
 
 Once this repository is published and the dev tree is complete, re-bootstrap
 the local cluster deliberately:
@@ -132,17 +160,16 @@ kubectl --namespace flux-system get kustomization flux-system
 
 Complete these steps in order:
 
-1. Increase Colima memory to at least 4 GiB; 6 GiB is preferable with
-   observability workloads.
-2. Publish a green multi-platform application release.
-3. Replace `REPLACE_ME` in the dev chart and image tags.
-4. Create and commit the SOPS-encrypted database Secret.
-5. Install the age private key as `flux-system/sops-age`.
-6. Publish and bootstrap this repository.
-7. Set `spec.suspend: false` in `clusters/dev/infrastructure.yaml`, commit, push,
+1. Run Colima with Kubernetes enabled and at least 4 GiB memory; 6 GiB is
+   preferable with observability workloads.
+2. Confirm the SOPS-encrypted database/JWT Secret is committed and securely back
+   up the ignored `.age-key.txt` private key.
+3. Install that age private key as `flux-system/sops-age`.
+4. Bootstrap Flux from this repository.
+5. Set `spec.suspend: false` in `clusters/dev/infrastructure.yaml`, commit, push,
    and wait until PostgreSQL and its PVC are Ready.
-8. Set `spec.suspend: false` in `clusters/dev/apps.yaml`, commit, and push.
-9. Reconcile and verify the release.
+6. Set `spec.suspend: false` in `clusters/dev/apps.yaml`, commit, and push.
+7. Reconcile and verify the release.
 
 Useful checks:
 

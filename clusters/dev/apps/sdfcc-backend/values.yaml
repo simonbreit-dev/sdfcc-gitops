@@ -2,9 +2,10 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/simonbreit-dev/software-development-cloud-computing26/sdfcc-backend
-  # Replace with the matching immutable image tag produced by application CI.
-  tag: sha-REPLACE_ME
-  digest: ""
+  # The tag documents the release; the digest is the immutable multi-platform
+  # index selected by Kubernetes for the node architecture.
+  tag: sha-4c16932
+  digest: sha256:0c482d7ff25e29e8689e7b020a1ef5b6ffd263a7165bf4da5aebc55869628730
   pullPolicy: IfNotPresent
 
 secret:

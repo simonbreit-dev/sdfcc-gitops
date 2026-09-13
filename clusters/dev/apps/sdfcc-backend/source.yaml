@@ -7,8 +7,8 @@ spec:
   interval: 5m
   url: oci://ghcr.io/simonbreit-dev/software-development-cloud-computing26/charts/sdfcc-backend
   ref:
-    # Replace after the application CI publishes an ARM64-capable release.
-    tag: 0.1.0-sha-REPLACE_ME
+    # Matching chart for the verified multi-platform application release.
+    tag: 0.1.0-sha-4c16932
   layerSelector:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
